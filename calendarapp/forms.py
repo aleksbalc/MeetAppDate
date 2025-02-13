@@ -56,9 +56,8 @@ class NameForm(forms.ModelForm):
     password = forms.CharField(
         widget=forms.PasswordInput,
         label="Password",
-        #help_text="Enter a secure password."
     )  # Use PasswordInput for hidden input
-    email = forms.EmailField(label="Email Address")  # Automatically validates email format
+    email = forms.EmailField(label="Email Address")
 
     class Meta:
         model = Name
@@ -89,11 +88,6 @@ class NameForm(forms.ModelForm):
 
         return end_date
 
-    def clean_password(self):
-        password = self.cleaned_data['password']
-        # Hash the password using SHA256
-        hashed_password = hashlib.sha256(password.encode('utf-8')).hexdigest()
-        return hashed_password  # Return the hashed password to store it in the database
 
 class PasswordForm(forms.Form):
     password = forms.CharField(

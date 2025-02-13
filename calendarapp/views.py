@@ -1,6 +1,7 @@
 # views.py
 from django import template
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.hashers import check_password
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.template import loader
 from django.urls import reverse
@@ -9,7 +10,7 @@ from . import forms
 import hashlib
 from .forms import EventForm, GuestAvailabilityForm, NameForm, PasswordForm
 from .models import Event, AvailableDate, GuestAvailability, Name
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.core.mail import send_mail
 
 def add_name(request):
@@ -29,19 +30,33 @@ def show_event(request, access_code):
         raise Http404("Event not found.")
 
     # Check if the user is already authenticated for this event
-    if request.session.get(f'event_access_{access_code}'):
-        return render(request, 'show_event.html', {'name': name})
+    access_key = f'event_access_{access_code}'
+    access_time_key = f'event_access_time_{access_code}'
+    session_expiry_minutes = 30  # Set the session validity duration (e.g., 30 minutes)
+
+    # Check if the access flag and timestamp exist
+    if request.session.get(access_key):
+        access_time = request.session.get(access_time_key)
+        if access_time:
+            access_time = datetime.fromisoformat(access_time)
+            # Check if the access is still valid
+            if datetime.now() - access_time < timedelta(minutes=session_expiry_minutes):
+                return render(request, 'show_event.html', {'name': name})
+
+        # If access has expired, remove the session keys
+        del request.session[access_key]
+        del request.session[access_time_key]
 
     # Handle password submission
     if request.method == 'POST':
         form = PasswordForm(request.POST)
         if form.is_valid():
             entered_password = form.cleaned_data['password']
-            hashed_password = hashlib.sha256(entered_password.encode('utf-8')).hexdigest()
 
-            if hashed_password == name.password:
-                # Save the access flag in the session
-                request.session[f'event_access_{access_code}'] = True
+            if check_password(entered_password, name.password):  # Use Django's check_password
+                # Save the access flag and timestamp in the session
+                request.session[access_key] = True
+                request.session[access_time_key] = datetime.now().isoformat()  # Save the current time
                 return redirect('show_event', access_code=access_code)
             else:
                 form.add_error('password', 'Incorrect password. Please try again.')
