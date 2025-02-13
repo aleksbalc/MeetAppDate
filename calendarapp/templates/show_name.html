@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Show Name</title>
+</head>
+
+<body>
+    <h1>Submitted Information</h1>
+    <p>Your name: {{ name.name }}</p>
+    <p>Email: {{ name.email }}</p>
+    <p>Start Date: {{ name.start_date }}</p>
+    <p>End Date: {{ name.end_date }}</p>
+    <a href="{% url 'add_name' %}">Add Another Entry</a>
+</body>
+
+</html>

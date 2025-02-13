@@ -1,0 +1,54 @@
+{% extends "layouts/base-fullscreen-new.html" %}
+
+{% block content %}
+<!-- Header -->
+<div class="header bg-transparent pb-6">
+    <div class="container-fluid">
+        <div class="header-body">
+            <div class="row align-items-center py-4">
+                <div class="col">
+                    <h6 class="h1 text-white d-inline-block mb-0">Add Name</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header bg-transparent">
+                    <h3 class="mb-0">Details</h3>
+                </div>
+                <h1>Add Your Name, Dates, Email, and Password</h1>
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    {% if form.non_field_errors %}
+                    <div style="color: red;">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+                    <button type="submit">Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    const today = new Date().toISOString().split('T')[0];
+    document.querySelector('input[name="start_date"]').setAttribute('min', today);
+
+    document.querySelector('input[name="start_date"]').addEventListener('change', function () {
+        const startDate = this.value;
+        const maxEndDate = new Date(new Date(startDate).getTime() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        document.querySelector('input[name="end_date"]').setAttribute('min', startDate);
+        document.querySelector('input[name="end_date"]').setAttribute('max', maxEndDate);
+    });
+</script>
+
+{% endblock content %}

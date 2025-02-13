@@ -1,0 +1,37 @@
+{% extends "layouts/base-fullscreen-new.html" %}
+
+{% block content %}
+<!-- Header -->
+<div class="header bg-transparent pb-6">
+    <div class="container-fluid">
+        <div class="header-body">
+            <div class="row align-items-center py-4">
+                <div class="col">
+                    <h6 class="h1 text-white d-inline-block mb-0">Create Event</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header bg-transparent">
+                    <h3 class="mb-0">Event Details</h3>
+                </div>
+                <div>
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.media }} <!-- Add this line -->
+                        {{ form.as_p }}
+                        <button type="submit">Create Event</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

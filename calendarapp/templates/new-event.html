@@ -1,0 +1,66 @@
+{% extends "layouts/base-fullscreen-new.html" %}
+
+{% block stylesheets %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-xl-12">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title ">Create New Event</h3>
+
+                    <div class="form-group">
+                        <label>Date Range:</label>
+                        <input type="text" class="form-control date-range" name="date_range" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const dateRange = document.querySelector('.date-range');
+
+        $(dateRange).daterangepicker({
+            opens: 'left',
+            autoUpdateInput: false,
+            locale: {
+                cancelLabel: 'Clear',
+                format: 'YYYY-MM-DD',
+                separator: ' - ',
+                applyLabel: 'Apply',
+                cancelLabel: 'Cancel',
+                fromLabel: 'From',
+                toLabel: 'To',
+                customRangeLabel: 'Custom Range',
+                weekLabel: 'W',
+                daysOfWeek: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+                monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+                firstDay: 0
+            },
+            ranges: {
+                'Today': [moment(), moment()],
+                'Tomorrow': [moment().add(1, 'days'), moment().add(1, 'days')],
+                'Next 7 Days': [moment(), moment().add(7, 'days')],
+                'Next 30 Days': [moment(), moment().add(30, 'days')]
+            }
+        }, function (start, end, label) {
+            dateRange.value = start.format('YYYY-MM-DD') + ' - ' + end.format('YYYY-MM-DD');
+        });
+
+        dateRange.on('cancel.daterangepicker', function (ev, picker) {
+            dateRange.value = '';
+        });
+    });
+</script>
+{% endblock javascripts %}
