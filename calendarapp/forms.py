@@ -1,40 +1,11 @@
 # forms.py
 from django import forms
 from . import models
-from .models import Event, GuestAvailability, AvailableDate, Name
+from .models import Event, GuestAvailability, AvailableDate
 from django.core.exceptions import ValidationError
 from datetime import timedelta, datetime, date
 from django.utils import timezone
 import hashlib
-
-class EventForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput)
-
-    class Meta:
-        model = Event
-        fields = ['name', 'start_date', 'end_date', 'creator_email', 'password']
-
-    def clean_start_date(self):
-        start_date = self.cleaned_data['start_date']
-        if start_date <= timezone.now():
-            raise forms.ValidationError("Start date must be greater than the current date.")
-        return start_date
-
-    def clean_end_date(self):
-        end_date = self.cleaned_data['end_date']
-        start_date = self.cleaned_data.get('start_date')
-        if end_date <= start_date:
-            raise forms.ValidationError("End date must be greater than the start date.")
-        if (end_date - start_date).days > 90:
-            raise forms.ValidationError("Event duration cannot exceed 90 days.")
-        return end_date
-
-    def save(self, commit=True):
-        event = super().save(commit=False)
-        event.set_password(self.cleaned_data['password'])
-        if commit:
-            event.save()
-        return event
 
 class GuestAvailabilityForm(forms.ModelForm):
     available_dates = forms.ModelMultipleChoiceField(
@@ -52,7 +23,7 @@ class GuestAvailabilityForm(forms.ModelForm):
         if event:
             self.fields['available_dates'].queryset = AvailableDate.objects.filter(event=event)
 
-class NameForm(forms.ModelForm):
+class EventForm(forms.ModelForm):
     password = forms.CharField(
         widget=forms.PasswordInput,
         label="Password",
@@ -60,7 +31,7 @@ class NameForm(forms.ModelForm):
     email = forms.EmailField(label="Email Address")
 
     class Meta:
-        model = Name
+        model = Event
         fields = ['name', 'start_date', 'end_date', 'email', 'password']
         widgets = {
             'start_date': forms.DateInput(attrs={'type': 'date'}),

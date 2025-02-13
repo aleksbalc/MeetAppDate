@@ -1,18 +1,162 @@
-<!DOCTYPE html>
-<html>
+{% extends "layouts/base-fullscreen-new.html" %}
 
-<head>
-    <title>Event Details</title>
-</head>
+{% block content %}
 
-<body>
-    <h1>Event Details</h1>
-    <p>Name: {{ name.name }}</p>
-    <p>Email: {{ name.email }}</p>
-    <p>Start Date: {{ name.start_date }}</p>
-    <p>End Date: {{ name.end_date }}</p>
-    <p>Access Code: {{ name.access_code }}</p>
-    <a href="{% url 'add_name' %}">Add Another Entry</a>
-</body>
+<div class="container mt-5">
+    <!-- Event Details -->
+    <div class="card shadow-lg">
+        <div class="card-header bg-white text-primary">
+            <h2 class="mb-0">{{ event.name }}</h2>
+            <p class="mb-0">Hosted by: {{ event.email }}</p>
+        </div>
+        <div class="card-body">
+            <p><strong>Start Date:</strong> {{ event.start_date }}</p>
+            <p><strong>End Date:</strong> {{ event.end_date }}</p>
+            <p><strong>Event ID:</strong>
+                <span id="access-code">{{ event.access_code }}</span>
+                <button class="btn btn-outline-primary" onclick="copyEventUrl(this)"
+                    data-url="{{ request.build_absolute_uri }}">Copy URL</button>
+            </p>
+        </div>
+    </div>
 
-</html>
+    <!-- Calendar View -->
+    <div class="card mt-4 shadow">
+        <div class="card-header bg-secondary text-white">
+            <h4 class="mb-0">Event Calendar</h4>
+        </div>
+        <div class="card-body">
+            <!-- FullCalendar container -->
+            <div id="calendar" style="max-width: 900px; margin: 0 auto;"></div>
+        </div>
+    </div>
+
+    <!-- Guest Availability -->
+    <div class="card mt-4 shadow">
+        <div class="card-header bg-secondary text-white">
+            <h4 class="mb-0">Guest Availability</h4>
+        </div>
+        <div class="card-body">
+            <p>Here you can see which dates your guests are available.</p>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Guest Name</th>
+                        <th>Available Dates</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for guest in event.guestavailability_set.all %}
+                    <tr>
+                        <td>{{ guest.name }}</td>
+                        <td>
+                            {% for date in guest.available_dates.all %}
+                            <span class="badge bg-success">{{ date.date }}</span>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2" class="text-center">No guest availability submitted yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Share Event -->
+    <div class="mt-4 text-center">
+        <!-- Store the event URL directly in the button's data attribute -->
+        <button class="btn btn-success" onclick="shareEvent(this)" data-url="{{ request.build_absolute_uri }}">Share
+            Event</button>
+
+        <p class="text-muted mt-2">Use the access code to invite guests to this event.</p>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.8/index.global.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/main.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.8/main.min.css" />
+
+<script>
+    // FullCalendar Initialization
+    document.addEventListener('DOMContentLoaded', function () {
+        const calendarEl = document.getElementById('calendar');
+
+        // Debug: Log the start and end dates
+        console.log('Start Date:', '{{ event.start_date|date:"Y-m-d" }}');
+        console.log('End Date:', '{{ event.end_date|date:"Y-m-d" }}');
+
+        const endDate = new Date('{{ event.end_date|date:"Y-m-d" }}');
+        endDate.setDate(endDate.getDate() + 1); // Add 1 day to make it inclusive
+
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            events: [
+                {
+                    title: 'Start Date',
+                    start: '{{ event.start_date|date:"Y-m-d" }}',
+                    color: '#28a745',
+                    textColor: '#ffffff'
+                },
+                {
+                    title: 'End Date',
+                    start: '{{ event.end_date|date:"Y-m-d" }}',
+                    color: '#dc3545',
+                    textColor: '#ffffff'
+                },
+                {
+                    // Highlight Range
+                    start: '{{ event.start_date|date:"Y-m-d" }}',
+                    end: endDate.toISOString().split('T')[0], // Convert back to ISO string
+                    display: 'background',
+                    color: '#ffeeba'
+                }
+            ]
+        });
+
+        calendar.render();
+    });
+
+    function copyEventUrl(button) {
+        const eventUrl = button.dataset.url; // Retrieve the event URL from the button's data attribute
+        if (eventUrl) {
+            navigator.clipboard.writeText(eventUrl).then(() => {
+                alert('Event URL copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy event URL:', err);
+            });
+        } else {
+            console.error('Event URL not found.');
+            alert('Unable to copy the event URL. Please try again.');
+        }
+    }
+
+    function shareEvent(button) {
+        const eventUrl = button.dataset.url; // Retrieve the event URL from the button's data attribute
+        if (eventUrl) {
+            const shareText = `Join my event here: ${eventUrl}`;
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Join My Event',
+                    text: 'Check out this event!',
+                    url: eventUrl
+                }).then(() => {
+                    console.log('Event shared successfully.');
+                }).catch(err => {
+                    console.error('Error sharing event:', err);
+                });
+            } else {
+                alert(shareText);
+            }
+        } else {
+            console.error('Event URL not found.');
+            alert('Unable to share the event URL. Please try again.');
+        }
+    }
+</script>
+
+{% endblock content %}
