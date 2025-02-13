@@ -1,17 +1,17 @@
-<!-- show_name.html -->
 <!DOCTYPE html>
 <html>
 
 <head>
-    <title>Show Name</title>
+    <title>Event Details</title>
 </head>
 
 <body>
-    <h1>Submitted Information</h1>
-    <p>Your name: {{ name.name }}</p>
+    <h1>Event Details</h1>
+    <p>Name: {{ name.name }}</p>
     <p>Email: {{ name.email }}</p>
     <p>Start Date: {{ name.start_date }}</p>
     <p>End Date: {{ name.end_date }}</p>
+    <p>Access Code: {{ name.access_code }}</p>
     <a href="{% url 'add_name' %}">Add Another Entry</a>
 </body>
 

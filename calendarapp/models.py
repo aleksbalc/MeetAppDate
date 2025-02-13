@@ -65,6 +65,12 @@ class Name(models.Model):
     end_date = models.DateField(default=datetime.date.today)
     email = models.EmailField(default='')
     password = models.CharField(max_length=64)  # Store the SHA256 hash (always 64 characters)
+    access_code = models.CharField(max_length=16, unique=True, blank=True)  # Random code
+
+    def save(self, *args, **kwargs):
+        if not self.access_code:
+            self.access_code = secrets.token_urlsafe(12)[:16]  # Generate a 16-character code
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name

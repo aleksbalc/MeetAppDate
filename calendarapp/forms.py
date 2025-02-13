@@ -94,3 +94,9 @@ class NameForm(forms.ModelForm):
         # Hash the password using SHA256
         hashed_password = hashlib.sha256(password.encode('utf-8')).hexdigest()
         return hashed_password  # Return the hashed password to store it in the database
+
+class PasswordForm(forms.Form):
+    password = forms.CharField(
+        widget=forms.PasswordInput,
+        label="Enter Event Password"
+    )

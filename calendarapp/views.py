@@ -6,7 +6,8 @@ from django.template import loader
 from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
 from . import forms
-from .forms import EventForm, GuestAvailabilityForm, NameForm
+import hashlib
+from .forms import EventForm, GuestAvailabilityForm, NameForm, PasswordForm
 from .models import Event, AvailableDate, GuestAvailability, Name
 from datetime import timedelta
 from django.core.mail import send_mail
@@ -16,11 +17,39 @@ def add_name(request):
         form = NameForm(request.POST)
         if form.is_valid():
             name_instance = form.save()  # Save the form and get the instance
-            request.session['last_name_id'] = name_instance.id  # Store the id in session
-            return redirect('show_name')
+            return redirect('show_event', access_code=name_instance.access_code)  # Redirect to event/<access_code>/
     else:
         form = NameForm()
     return render(request, 'add_name.html', {'form': form})
+
+def show_event(request, access_code):
+    try:
+        name = Name.objects.get(access_code=access_code)
+    except Name.DoesNotExist:
+        raise Http404("Event not found.")
+
+    # Check if the user is already authenticated for this event
+    if request.session.get(f'event_access_{access_code}'):
+        return render(request, 'show_event.html', {'name': name})
+
+    # Handle password submission
+    if request.method == 'POST':
+        form = PasswordForm(request.POST)
+        if form.is_valid():
+            entered_password = form.cleaned_data['password']
+            hashed_password = hashlib.sha256(entered_password.encode('utf-8')).hexdigest()
+
+            if hashed_password == name.password:
+                # Save the access flag in the session
+                request.session[f'event_access_{access_code}'] = True
+                return redirect('show_event', access_code=access_code)
+            else:
+                form.add_error('password', 'Incorrect password. Please try again.')
+    else:
+        form = PasswordForm()
+
+    return render(request, 'enter_password.html', {'form': form, 'access_code': access_code})
+
 
 def show_name(request):
     name_id = request.session.get('last_name_id')

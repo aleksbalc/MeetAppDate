@@ -10,7 +10,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     #path('new-event/', views.new_event, name='new-event'),
     path('create-event/', views.create_event, name='create-event'),
-    path("event/<slug:slug>/", views.submit_availability, name="submit_availability"),
     path('add/', views.add_name, name='add_name'),
     path('show/', views.show_name, name='show_name'),
+    path('event/<str:access_code>/', views.show_event, name='show_event'),
 ]
