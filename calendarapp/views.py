@@ -2,6 +2,7 @@
 from django import template
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import check_password
+from django.utils.dateparse import parse_date
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.template import loader
 from django.urls import reverse
@@ -65,6 +66,72 @@ def show_event(request, access_code):
 
     return render(request, 'enter_password.html', {'form': form, 'access_code': access_code})
 
+def add_availability(request, access_code):
+    event = get_object_or_404(Event, access_code=access_code)
+
+    if request.method == "POST":
+        guest_name = request.POST.get("guest_name", "").strip()
+        selected_dates = request.POST.getlist("available_dates")
+        print(request.POST)
+        # Validate input
+        if not guest_name or not selected_dates:
+            return render(request, "add_availability.html", {
+                "event": event,
+                "error": "Please fill in all fields."
+            })
+
+        # Debugging logs
+        print(f"Guest Name: {guest_name}")
+        print(f"Selected Dates: {selected_dates}")
+
+        # Create guest availability
+        guest = GuestAvailability.objects.create(event=event, name=guest_name)
+
+        # Save each selected date
+        for date_str in selected_dates:
+            try:
+                # Parse the date
+                parsed_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+
+                # Save to the AvailableDate table
+                AvailableDate.objects.create(guest=guest, date=parsed_date)
+                print(f"Added AvailableDate: {parsed_date} for {guest_name}")
+            except ValueError as e:
+                # Log the error for debugging
+                print(f"Error parsing date '{date_str}': {e}")
+
+        return redirect("show_event", access_code=access_code)
+
+    return render(request, "add_availability.html", {"event": event})
+
+def submit_availability(request, slug):
+    event = get_object_or_404(Event, slug=slug)
+    if request.method == "POST":
+        password = request.POST.get("password")
+    if not event.check_password(password):
+        return render(request, "submit_availability.html", {"event": event, "error": "Invalid password"})
+    form = GuestAvailabilityForm(request.POST)
+    if form.is_valid():
+        guest_availability = form.save(commit=False)
+        guest_availability.event = event
+        guest_availability.save()
+        form.save_m2m()  # Save Many-to-Many relationships
+        return redirect("availability_submitted")
+    else:
+        form = GuestAvailabilityForm()
+        return render(request, "submit_availability.html", {"event": event, "form": form})
+
+def post_event(request):
+    if request.method == 'POST':
+        form = forms.CreateEvent(request.POST)
+        if form.is_valid():
+            new_event = form.save(commit=False)
+            new_event.save()
+            return redirect('create-event')
+    else:
+        form = forms.CreateEvent()
+    return render(request, 'events/post_event.html', {'form':form})
+
 def index(request):
     context = {'segment': 'index'}
 
@@ -106,35 +173,3 @@ def create_event(request):
         form = EventForm()
     
     return render(request, 'create_event.html', {'form': form})
-
-
-def submit_availability(request, slug):
-    event = get_object_or_404(Event, slug=slug)
-
-    if request.method == "POST":
-        password = request.POST.get("password")
-        if not event.check_password(password):
-            return render(request, "submit_availability.html", {"event": event, "error": "Invalid password"})
-        
-        form = GuestAvailabilityForm(request.POST)
-        if form.is_valid():
-            guest_availability = form.save(commit=False)
-            guest_availability.event = event
-            guest_availability.save()
-            form.save_m2m()  # Save Many-to-Many relationships
-            return redirect("availability_submitted")
-    else:
-        form = GuestAvailabilityForm()
-    
-    return render(request, "submit_availability.html", {"event": event, "form": form})
-
-def post_event(request):
-    if request.method == 'POST':
-        form = forms.CreateEvent(request.POST)
-        if form.is_valid():
-            new_event = form.save(commit=False)
-            new_event.save()
-            return redirect('create-event')
-    else:
-        form = forms.CreateEvent()
-    return render(request, 'events/post_event.html', {'form':form})

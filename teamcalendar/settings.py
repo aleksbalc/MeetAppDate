@@ -134,3 +134,12 @@ SESSION_COOKIE_SECURE = True
 
 # Prevent JavaScript access to session cookies
 SESSION_COOKIE_HTTPONLY = True
+
+USE_L10N = False
+DATE_INPUT_FORMATS = [
+    '%Y-%m-%d',      # YYYY-MM-DD format
+    '%d/%m/%Y',      # DD/MM/YYYY format
+    '%m/%d/%Y',      # MM/DD/YYYY format
+    '%b. %d, %Y',    # Month DD, YYYY format
+]
+DATE_FORMAT = '%Y-%m-%d'  # Default display format

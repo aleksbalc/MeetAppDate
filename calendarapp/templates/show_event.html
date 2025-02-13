@@ -10,10 +10,11 @@
             <p class="mb-0">Hosted by: {{ event.email }}</p>
         </div>
         <div class="card-body">
-            <p><strong>Start Date:</strong> {{ event.start_date }}</p>
-            <p><strong>End Date:</strong> {{ event.end_date }}</p>
+            <p><strong>Start Date:</strong> {{ event.start_date|date:"F j, Y" }}</p>
+            <p><strong>End Date:</strong> {{ event.end_date|date:"F j, Y" }}</p>
             <p><strong>Event ID:</strong>
                 <span id="access-code">{{ event.access_code }}</span>
+                <br>
                 <button class="btn btn-outline-primary" onclick="copyEventUrl(this)"
                     data-url="{{ request.build_absolute_uri }}">Copy URL</button>
             </p>
@@ -51,7 +52,7 @@
                         <td>{{ guest.name }}</td>
                         <td>
                             {% for date in guest.available_dates.all %}
-                            <span class="badge bg-success">{{ date.date }}</span>
+                            <span class="badge bg-success">{{ date.date|date:"F j, Y" }}</span>
                             {% endfor %}
                         </td>
                     </tr>

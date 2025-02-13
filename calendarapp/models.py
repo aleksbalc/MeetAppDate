@@ -1,3 +1,4 @@
+#models.py
 from django.db import models
 from django.forms import ValidationError
 from django.utils import timezone
@@ -7,26 +8,6 @@ import hashlib
 import datetime
 import secrets
 from datetime import timedelta
-
-class AvailableDate(models.Model):
-    """Individual dates in the event's range for availability"""
-    event = models.ForeignKey('calendarapp.Event', on_delete=models.CASCADE)  # Use string reference
-    date = models.DateField()
-
-    def __str__(self):
-        return str(self.date)
-
-
-class GuestAvailability(models.Model):
-    event = models.ForeignKey('calendarapp.Event', on_delete=models.CASCADE)  # Use string reference
-    name = models.CharField(max_length=50)
-    available_dates = models.ManyToManyField(AvailableDate, related_name='guest_availability')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.name} ({self.event.name})"
-
-
 
 class Event(models.Model):
     name = models.CharField(max_length=100)
@@ -47,3 +28,11 @@ class Event(models.Model):
 
     def __str__(self):
         return self.name
+    
+class GuestAvailability(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, default = '')
+
+class AvailableDate(models.Model):
+    guest = models.ForeignKey(GuestAvailability, on_delete=models.CASCADE, default=None)
+    date = models.DateField(default=datetime.date.today)
