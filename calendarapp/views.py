@@ -46,6 +46,7 @@ def show_event(request, access_code):
                 guest_availabilities = AvailableDate.objects.filter(guest__event=event).select_related('guest')
 
                 availability_data = {}  # Store date-wise guest availability
+                guest_names = sorted([guest.name for guest in GuestAvailability.objects.filter(event=event)])
 
                 for availability in guest_availabilities:
                     date_str = availability.date.strftime("%Y-%m-%d")
@@ -53,10 +54,26 @@ def show_event(request, access_code):
                         availability_data[date_str] = []
                     availability_data[date_str].append(availability.guest.name)
 
+                # Find Perfect and Great Dates
+                perfect_dates = []
+                great_dates = {}
+
+                for dates, guests in availability_data.items():
+                    if sorted(guests) == guest_names:  # Check if all guests are available
+                        perfect_dates.append(dates)
+                    else:
+                        great_dates[dates] = guests  # Store guests available on each date
+
+                # Sort great dates by most available guests
+                sorted_great_dates = sorted(great_dates.items(), key=lambda x: len(x[1]), reverse=True)
+
                 return render(request, 'show_event.html', {
                     'event': event,
                     'today': date.today(),
-                    'availability_data': json.dumps(availability_data)  # Convert to JSON
+                    'availability_data': json.dumps(availability_data),
+                    'perfect_dates': perfect_dates,
+                    'great_dates': sorted_great_dates[:5],
+                    'guest_names': guest_names  # Send full guest list for availability checking
                 })
 
         # If access has expired, remove the session keys

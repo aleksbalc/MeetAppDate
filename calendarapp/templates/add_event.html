@@ -8,7 +8,7 @@
         <div class="header-body">
             <div class="row align-items-center py-4">
                 <div class="col">
-                    <h6 class="h1 text-white d-inline-block mb-0">Add Event</h6>
+                    <h6 class="h1 text-white d-inline-block mb-0">New Event</h6>
                 </div>
             </div>
         </div>
@@ -21,14 +21,46 @@
         <div class="col">
             <div class="card">
                 <div class="card-header bg-transparent">
-                    <h3 class="mb-0">Details</h3>
+                    <h2 class="mb-0">Event details</h2>
                 </div>
-                <h1>Add Your Name, Dates, Email, and Password</h1>
                 <form method="post">
                     {% csrf_token %}
-                    {{ form.as_p }}
+
+                    <!-- Render form fields with Bootstrap styling -->
+                    <div class="mb-3">
+                        <label class="form-label">Event Name</label>
+                        {{ form.name }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description (Optional)</label>
+                        {{ form.description }}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Start Date</label>
+                            {{ form.start_date }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">End Date</label>
+                            {{ form.end_date }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        {{ form.email }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        {{ form.password }}
+                    </div>
+
+                    <!-- Display form errors -->
                     {% if form.non_field_errors %}
-                    <div style="color: red;">
+                    <div class="alert alert-danger">
                         {{ form.non_field_errors }}
                     </div>
                     {% endif %}

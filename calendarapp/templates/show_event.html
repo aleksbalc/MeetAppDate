@@ -2,6 +2,145 @@
 
 {% block content %}
 
+
+<div class="container mt-5">
+    <!-- Event Details -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card shadow-lg">
+                <div class="card-header bg-white text-primary">
+                    <h2 class="mb-0">{{ event.name }}</h2>
+                    <p class="mb-0">Hosted by: {{ event.email }}</p>
+                </div>
+                <div class="card-body">
+                    <p><strong>Start Date:</strong> {{ event.start_date|date:"F j, Y" }}</p>
+                    <p><strong>End Date:</strong> {{ event.end_date|date:"F j, Y" }}</p>
+                    {% if event.description %}
+                    <p><strong>Description:</strong> {{ event.description }}</p>
+                    {% endif %}
+                    <p><strong>Event ID:</strong>
+                        <span id="access-code">{{ event.access_code }}</span>
+                        <button class="btn btn-outline-primary" onclick="copyEventUrl(this)"
+                            data-url="{{ request.build_absolute_uri }}">Copy URL</button>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="card shadow-lg"></div>
+        <!-- Calendar -->
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0">Event Calendar</h4>
+                </div>
+                <div class="card-body">
+                    <div id="calendar" style="max-width: 900px; margin: 0 auto;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Availability Analysis Panel (Right) -->
+        <div class="col-md-4">
+            <div class="card shadow">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0">Best Meetup Dates</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Perfect Dates -->
+                    <h5 class="text-success">Perfect Dates</h5>
+                    {% if perfect_dates %}
+                    <ul class="list-group">
+                        {% for date in perfect_dates %}
+                        <li class="list-group-item bg-success">{{ date }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted">No perfect dates where all guests are available.</p>
+                    {% endif %}
+
+                    <!-- Great Dates -->
+                    <h5 class="mt-3 text-warning">Great Dates</h5>
+                    {% if great_dates %}
+                    {% for date, available_guests in great_dates %}
+                    <div class="mb-3">
+                        <strong class="text-dark">{{ date }}</strong>
+                        <div class="mt-1">
+                            {% for guest in guest_names %}
+                            {% if guest in available_guests %}
+                            <span class="badge bg-success">{{ guest }}</span>
+                            {% else %}
+                            <span class="badge bg-danger">{{ guest }}</span>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-muted">No great dates found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Guest Availability -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card mt-4 shadow">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0">Guest Availability</h4>
+                </div>
+                <div class="mt-4 text-center">
+                    {% if event.end_date >= today %}
+                    <a href="{% url 'add_availability' event.access_code %}" class="btn btn-primary">Add Your
+                        Availability</a>
+                    {% else %}
+                    <p class="text-danger">Sorry, this event has already ended.</p>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <p>Here you can see which dates your guests are available.</p>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Guest Name</th>
+                                <th>Available Dates</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for guest in event.guestavailability_set.all %}
+                            <tr>
+                                <td>{{ guest.name }}</td>
+                                <td class="available-dates">
+                                    {% for date in guest.availabledate_set.all|dictsort:"date" %}
+                                    <span class="badge bg-success">{{ date.date|date:"F j, Y" }}</span>
+                                    {% endfor %}
+                                </td>
+
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2" class="text-center">No guest availability submitted yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <!-- Share Event -->
+                    <div class="mt-4 text-center">
+                        <p class="text-muted mt-2">Missing someone? Share this event with your friends!</p>
+                        <button class="btn btn btn-secondary" onclick="shareEvent(this)"
+                            data-url="{{ request.build_absolute_uri }}">Share
+                            Event</button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <style>
     td.available-dates {
         display: flex;
@@ -11,83 +150,41 @@
     }
 
     .badge {
-        white-space: nowrap;
-        /* Ensures each date stays in a single line */
+        word-wrap: break-word;
+    }
+
+    .row.mt-4 {
+        display: flex;
+        align-items: stretch;
+        /* Ensures both columns have equal height */
+    }
+
+    .col-md-8,
+    .col-md-4 {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .card.shadow {
+        flex-grow: 1;
+        /* Makes the cards fill the available space */
+    }
+
+
+    td:first-child {
+        max-width: 200px;
+        /* Prevents excessive column width */
+        word-wrap: break-word;
+        white-space: normal;
+    }
+
+    .fc-event-title {
+        white-space: normal;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        font-size: 12px;
     }
 </style>
-
-<div class="container mt-5">
-    <!-- Event Details -->
-    <div class="card shadow-lg">
-        <div class="card-header bg-white text-primary">
-            <h2 class="mb-0">{{ event.name }}</h2>
-            <p class="mb-0">Hosted by: {{ event.email }}</p>
-        </div>
-        <div class="card-body">
-            <p><strong>Start Date:</strong> {{ event.start_date|date:"F j, Y" }}</p>
-            <p><strong>End Date:</strong> {{ event.end_date|date:"F j, Y" }}</p>
-            <p><strong>Event ID:</strong>
-                <span id="access-code">{{ event.access_code }}</span>
-                <br>
-                <button class="btn btn-outline-primary" onclick="copyEventUrl(this)"
-                    data-url="{{ request.build_absolute_uri }}">Copy URL</button>
-            </p>
-        </div>
-    </div>
-
-    <!-- Calendar View -->
-    <div class="card mt-4 shadow">
-        <div class="card-header bg-secondary text-white">
-            <h4 class="mb-0">Event Calendar</h4>
-        </div>
-        <div class="card-body">
-            <div id="calendar" style="max-width: 900px; margin: 0 auto;"></div>
-        </div>
-    </div>
-
-    <!-- Guest Availability -->
-    <div class="card mt-4 shadow">
-        <div class="card-header bg-secondary text-white">
-            <h4 class="mb-0">Guest Availability</h4>
-        </div>
-        <div class="mt-4 text-center">
-            {% if event.end_date >= today %}
-            <a href="{% url 'add_availability' event.access_code %}" class="btn btn-primary">Add Your Availability</a>
-            {% else %}
-            <p class="text-danger">Sorry, this event has already ended.</p>
-            {% endif %}
-        </div>
-        <div class="card-body">
-            <p>Here you can see which dates your guests are available.</p>
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Guest Name</th>
-                        <th>Available Dates</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for guest in event.guestavailability_set.all %}
-                    <tr>
-                        <td>{{ guest.name }}</td>
-                        <td class="available-dates">
-                            {% for date in guest.availabledate_set.all|dictsort:"date" %}
-                            <span class="badge bg-success">{{ date.date|date:"F j, Y" }}</span>
-                            {% endfor %}
-                        </td>
-
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="2" class="text-center">No guest availability submitted yet.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-</div>
 
 <!-- FullCalendar Dependencies -->
 <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/index.global.min.js"></script>
@@ -103,23 +200,20 @@
         let events = [];
         let highlightRanges = [];
 
-        // Convert event end date to JavaScript date and add one day to make sure it's included
         let eventEndDate = new Date('{{ event.end_date|date:"Y-m-d" }}');
-        eventEndDate.setDate(eventEndDate.getDate() + 1); // Add 1 day to make it inclusive
+        eventEndDate.setDate(eventEndDate.getDate() + 1);
 
-        // Highlight the entire event duration INCLUDING the end date
         highlightRanges.push({
             start: '{{ event.start_date|date:"Y-m-d" }}',
-            end: eventEndDate.toISOString().split('T')[0], // Convert back to string
+            end: eventEndDate.toISOString().split('T')[0],
             display: 'background',
             color: '#ffeeba'
         });
 
-        // Convert availability data into separate FullCalendar events per guest
         for (const [date, guests] of Object.entries(availabilityData)) {
             guests.forEach(guest => {
                 events.push({
-                    title: guest, // Each guest as a separate event
+                    title: guest,
                     start: date,
                     color: '#007bff',
                     textColor: '#ffffff'
@@ -127,7 +221,6 @@
             });
         }
 
-        // Add event start and end markers
         events.push(
             {
                 title: 'Start Date',
@@ -143,16 +236,58 @@
             }
         );
 
-        // Initialize FullCalendar
         const calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
             height: 'auto',
             eventDisplay: 'block',
-            events: events.concat(highlightRanges) // Merge availability events and highlight range
+            events: events.concat(highlightRanges),
+            eventContent: function (arg) {
+                let eventTitle = document.createElement('div');
+                eventTitle.innerHTML = arg.event.title.replace(/(.{15})/g, '$1<br>'); // Insert breaks for long names
+                eventTitle.style.wordWrap = 'break-word';
+                eventTitle.style.whiteSpace = 'normal';
+                return { domNodes: [eventTitle] };
+            }
         });
 
         calendar.render();
     });
+    function copyEventUrl(button) {
+        const eventUrl = button.dataset.url; // Retrieve the event URL from the button's data attribute
+        if (eventUrl) {
+            navigator.clipboard.writeText(eventUrl).then(() => {
+                alert('Event URL copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy event URL:', err);
+            });
+        } else {
+            console.error('Event URL not found.');
+            alert('Unable to copy the event URL. Please try again.');
+        }
+    }
+
+    function shareEvent(button) {
+        const eventUrl = button.dataset.url; // Retrieve the event URL from the button's data attribute
+        if (eventUrl) {
+            const shareText = `Join my event here: ${eventUrl}`;
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Join My Event',
+                    text: 'Check out this event!',
+                    url: eventUrl
+                }).then(() => {
+                    console.log('Event shared successfully.');
+                }).catch(err => {
+                    console.error('Error sharing event:', err);
+                });
+            } else {
+                alert(shareText);
+            }
+        } else {
+            console.error('Event URL not found.');
+            alert('Unable to share the event URL. Please try again.');
+        }
+    }
 </script>
 
 

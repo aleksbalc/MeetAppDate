@@ -32,10 +32,11 @@ class EventForm(forms.ModelForm):
 
     class Meta:
         model = Event
-        fields = ['name', 'start_date', 'end_date', 'email', 'password']
+        fields = ['name', 'description', 'start_date', 'end_date', 'email', 'password']
         widgets = {
             'start_date': forms.DateInput(attrs={'type': 'date'}),
             'end_date': forms.DateInput(attrs={'type': 'date'}),
+            'description': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Enter a short description (optional)'}),
         }
 
     def clean_start_date(self):

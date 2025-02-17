@@ -16,6 +16,7 @@ class Event(models.Model):
     email = models.EmailField(default='')
     password = models.CharField(max_length=128, default='')  # 128 to handle Django's hashed password format
     access_code = models.CharField(max_length=16, unique=True, blank=True)  # Random code
+    description = models.TextField(blank=True, null=True)  # <-- Add this field
 
     def save(self, *args, **kwargs):
         if not self.access_code:
