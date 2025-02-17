@@ -8,6 +8,7 @@ from django.template import loader
 from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
 from . import forms
+import json
 import hashlib
 from .forms import EventForm, GuestAvailabilityForm, PasswordForm
 from .models import Event, AvailableDate, GuestAvailability
@@ -42,7 +43,21 @@ def show_event(request, access_code):
             access_time = datetime.fromisoformat(access_time)
             # Check if the access is still valid
             if datetime.now() - access_time < timedelta(minutes=session_expiry_minutes):
-                return render(request, 'show_event.html', {'event': event, "today":date.today()})
+                guest_availabilities = AvailableDate.objects.filter(guest__event=event).select_related('guest')
+
+                availability_data = {}  # Store date-wise guest availability
+
+                for availability in guest_availabilities:
+                    date_str = availability.date.strftime("%Y-%m-%d")
+                    if date_str not in availability_data:
+                        availability_data[date_str] = []
+                    availability_data[date_str].append(availability.guest.name)
+
+                return render(request, 'show_event.html', {
+                    'event': event,
+                    'today': date.today(),
+                    'availability_data': json.dumps(availability_data)  # Convert to JSON
+                })
 
         # If access has expired, remove the session keys
         del request.session[access_key]
