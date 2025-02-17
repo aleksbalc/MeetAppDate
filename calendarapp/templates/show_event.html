@@ -2,6 +2,20 @@
 
 {% block content %}
 
+<style>
+    td.available-dates {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        /* Adds spacing between badges */
+    }
+
+    .badge {
+        white-space: nowrap;
+        /* Ensures each date stays in a single line */
+    }
+</style>
+
 <div class="container mt-5">
     <!-- Event Details -->
     <div class="card shadow-lg">
@@ -56,7 +70,7 @@
                     {% for guest in event.guestavailability_set.all %}
                     <tr>
                         <td>{{ guest.name }}</td>
-                        <td>
+                        <td class="available-dates">
                             {% for date in guest.availabledate_set.all %}
                             <span class="badge bg-success">{{ date.date|date:"F j, Y" }}</span>
                             {% endfor %}

@@ -1,3 +1,4 @@
+<!-- add_availability.html -->
 {% extends "layouts/base-fullscreen-new.html" %}
 {% load custom_filters %}
 {% block content %}
@@ -59,11 +60,14 @@
             dateFormat: "Y-m-d",
             minDate: startDate,
             maxDate: endDate,
-            onDayCreate: function (dObj, dStr, fp, dayElem) {
-                dayElem.classList.add("unavailable"); // Mark all as unavailable by default
-            },
             onChange: function (selectedDatesArray) {
-                selectedDates = new Set(selectedDatesArray.map(date => date.toISOString().split("T")[0]));
+                selectedDates = new Set(
+                    selectedDatesArray.map(date => {
+                        // Convert to local timezone before formatting
+                        let localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+                        return localDate.toISOString().split("T")[0]; // Store as "YYYY-MM-DD"
+                    })
+                );
                 document.getElementById("selected_dates").value = Array.from(selectedDates).join(",");
             }
         });
