@@ -71,10 +71,11 @@
                     <tr>
                         <td>{{ guest.name }}</td>
                         <td class="available-dates">
-                            {% for date in guest.availabledate_set.all %}
+                            {% for date in guest.availabledate_set.all|dictsort:"date" %}
                             <span class="badge bg-success">{{ date.date|date:"F j, Y" }}</span>
                             {% endfor %}
                         </td>
+
                     </tr>
                     {% empty %}
                     <tr>
@@ -114,13 +115,15 @@
             color: '#ffeeba'
         });
 
-        // Convert availability data into FullCalendar events
+        // Convert availability data into separate FullCalendar events per guest
         for (const [date, guests] of Object.entries(availabilityData)) {
-            events.push({
-                title: guests.join(", "),  // Display multiple guest names
-                start: date,
-                color: '#007bff',
-                textColor: '#ffffff'
+            guests.forEach(guest => {
+                events.push({
+                    title: guest, // Each guest as a separate event
+                    start: date,
+                    color: '#007bff',
+                    textColor: '#ffffff'
+                });
             });
         }
 
