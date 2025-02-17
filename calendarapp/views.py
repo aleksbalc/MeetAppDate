@@ -11,7 +11,7 @@ from . import forms
 import hashlib
 from .forms import EventForm, GuestAvailabilityForm, PasswordForm
 from .models import Event, AvailableDate, GuestAvailability
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 from django.core.mail import send_mail
 
 def add_event(request):
@@ -42,7 +42,7 @@ def show_event(request, access_code):
             access_time = datetime.fromisoformat(access_time)
             # Check if the access is still valid
             if datetime.now() - access_time < timedelta(minutes=session_expiry_minutes):
-                return render(request, 'show_event.html', {'event': event})
+                return render(request, 'show_event.html', {'event': event, "today":date.today()})
 
         # If access has expired, remove the session keys
         del request.session[access_key]
@@ -69,40 +69,46 @@ def show_event(request, access_code):
 def add_availability(request, access_code):
     event = get_object_or_404(Event, access_code=access_code)
 
+    # Session-based authentication check
+    access_key = f'event_access_{access_code}'
+    access_time_key = f'event_access_time_{access_code}'
+    session_expiry_minutes = 30  # Set session timeout
+
+    if not request.session.get(access_key):
+        return redirect('show_event', access_code=access_code)  # Redirect to password page if not authenticated
+
+    # Check session expiration
+    access_time = request.session.get(access_time_key)
+    if access_time:
+        access_time = datetime.fromisoformat(access_time)
+        if datetime.now() - access_time > timedelta(minutes=session_expiry_minutes):
+            del request.session[access_key]
+            del request.session[access_time_key]
+            return redirect('show_event', access_code=access_code)  # Redirect to re-enter password
+
     if request.method == "POST":
         guest_name = request.POST.get("guest_name", "").strip()
         selected_dates = request.POST.getlist("available_dates")
-        print(request.POST)
-        # Validate input
+
         if not guest_name or not selected_dates:
             return render(request, "add_availability.html", {
                 "event": event,
                 "error": "Please fill in all fields."
             })
 
-        # Debugging logs
-        print(f"Guest Name: {guest_name}")
-        print(f"Selected Dates: {selected_dates}")
-
-        # Create guest availability
         guest = GuestAvailability.objects.create(event=event, name=guest_name)
 
-        # Save each selected date
         for date_str in selected_dates:
             try:
-                # Parse the date
                 parsed_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-
-                # Save to the AvailableDate table
                 AvailableDate.objects.create(guest=guest, date=parsed_date)
-                print(f"Added AvailableDate: {parsed_date} for {guest_name}")
-            except ValueError as e:
-                # Log the error for debugging
-                print(f"Error parsing date '{date_str}': {e}")
+            except ValueError:
+                print(f"Invalid date: {date_str}")
 
         return redirect("show_event", access_code=access_code)
 
     return render(request, "add_availability.html", {"event": event})
+
 
 def submit_availability(request, slug):
     event = get_object_or_404(Event, slug=slug)

@@ -37,6 +37,16 @@
         <div class="card-header bg-secondary text-white">
             <h4 class="mb-0">Guest Availability</h4>
         </div>
+        <!-- Availability Submission -->
+        <div class="mt-4 text-center">
+            {% if event.end_date >= today %}
+            <a href="{% url 'add_availability' event.access_code %}" class="btn btn-primary">
+                Add Your Availability
+            </a>
+            {% else %}
+            <p class="text-danger">Sorry, this event has already ended.</p>
+            {% endif %}
+        </div>
         <div class="card-body">
             <p>Here you can see which dates your guests are available.</p>
             <table class="table table-bordered">
