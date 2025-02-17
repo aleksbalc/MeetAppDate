@@ -61,9 +61,10 @@
                     <tr>
                         <td>{{ guest.name }}</td>
                         <td>
-                            {% for date in guest.available_dates.all %}
+                            {% for date in guest.availabledate_set.all %}
                             <span class="badge bg-success">{{ date.date|date:"F j, Y" }}</span>
                             {% endfor %}
+
                         </td>
                     </tr>
                     {% empty %}

@@ -1,15 +1,16 @@
-<!-- add_availability.html -->
 {% extends "layouts/base-fullscreen-new.html" %}
 {% load custom_filters %}
 {% block content %}
+
 <div class="container mt-5">
     <h1>Add Your Availability for {{ event.name }}</h1>
-    <!-- Error Display -->
+
     {% if error %}
     <div class="alert alert-danger">
         {{ error }}
     </div>
     {% endif %}
+
     <!-- Event Information -->
     <div class="card shadow-lg">
         <div class="card-body">
@@ -17,29 +18,56 @@
             <p><strong>End Date:</strong> {{ event.end_date|date:"Y-m-d" }}</p>
         </div>
     </div>
+
     <!-- Availability Form -->
-    <form method="POST" class="mt-4">
+    <form method="POST" id="availability-form">
         {% csrf_token %}
-        <!-- User Name Input -->
-        <div class="form-group">
+
+        <!-- Guest Name Input -->
+        <div class="form-group mt-3">
             <label for="guest_name">Your Name</label>
             <input type="text" class="form-control" id="guest_name" name="guest_name" required>
         </div>
-        <!-- Availability Checkboxes -->
-        <div class="form-group mt-3">
-            <label for="available_dates">Select Your Available Dates:</label>
-            <div class="d-flex flex-wrap">
-                {% for date in event.start_date|date_range:event.end_date %}
-                <div class="form-check m-2">
-                    <input class="form-check-input" type="checkbox" id="date-{{ date }}" name="available_dates"
-                        value="{{ date|date:'Y-m-d' }}">
-                    <label class="form-check-label" for="date-{{ date }}">{{ date|date:"Y-m-d" }}</label>
-                </div>
-                {% endfor %}
-            </div>
+
+        <!-- Calendar for Availability Selection -->
+        <div class="form-group mt-4">
+            <label>Select Your Available Dates:</label>
+            <input type="text" id="calendar" class="form-control" placeholder="Click to select dates">
         </div>
+
+        <!-- Hidden Input to Store Selected Dates -->
+        <input type="hidden" id="selected_dates" name="available_dates">
+
         <!-- Submit Button -->
         <button type="submit" class="btn btn-primary mt-3">Submit Availability</button>
     </form>
 </div>
+
+<!-- Include Flatpickr (Interactive Calendar) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let selectedDates = new Set();
+
+        const startDate = "{{ event.start_date|date:'Y-m-d' }}";
+        const endDate = "{{ event.end_date|date:'Y-m-d' }}";
+
+        flatpickr("#calendar", {
+            mode: "multiple",
+            dateFormat: "Y-m-d",
+            minDate: startDate,
+            maxDate: endDate,
+            onDayCreate: function (dObj, dStr, fp, dayElem) {
+                dayElem.classList.add("unavailable"); // Mark all as unavailable by default
+            },
+            onChange: function (selectedDatesArray) {
+                selectedDates = new Set(selectedDatesArray.map(date => date.toISOString().split("T")[0]));
+                document.getElementById("selected_dates").value = Array.from(selectedDates).join(",");
+            }
+        });
+    });
+</script>
+
 {% endblock content %}

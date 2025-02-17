@@ -69,28 +69,27 @@ def show_event(request, access_code):
 def add_availability(request, access_code):
     event = get_object_or_404(Event, access_code=access_code)
 
-    # Session-based authentication check
+    # Ensure user is authenticated for this event
     access_key = f'event_access_{access_code}'
     access_time_key = f'event_access_time_{access_code}'
-    session_expiry_minutes = 30  # Set session timeout
+    session_expiry_minutes = 30
 
     if not request.session.get(access_key):
-        return redirect('show_event', access_code=access_code)  # Redirect to password page if not authenticated
+        return redirect('show_event', access_code=access_code)
 
-    # Check session expiration
     access_time = request.session.get(access_time_key)
     if access_time:
         access_time = datetime.fromisoformat(access_time)
         if datetime.now() - access_time > timedelta(minutes=session_expiry_minutes):
             del request.session[access_key]
             del request.session[access_time_key]
-            return redirect('show_event', access_code=access_code)  # Redirect to re-enter password
+            return redirect('show_event', access_code=access_code)
 
     if request.method == "POST":
         guest_name = request.POST.get("guest_name", "").strip()
-        selected_dates = request.POST.getlist("available_dates")
+        selected_dates_str = request.POST.get("available_dates", "")
 
-        if not guest_name or not selected_dates:
+        if not guest_name or not selected_dates_str:
             return render(request, "add_availability.html", {
                 "event": event,
                 "error": "Please fill in all fields."
@@ -98,10 +97,12 @@ def add_availability(request, access_code):
 
         guest = GuestAvailability.objects.create(event=event, name=guest_name)
 
+        selected_dates = selected_dates_str.split(",")
         for date_str in selected_dates:
             try:
                 parsed_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-                AvailableDate.objects.create(guest=guest, date=parsed_date)
+                if event.start_date <= parsed_date <= event.end_date:
+                    AvailableDate.objects.create(guest=guest, date=parsed_date)
             except ValueError:
                 print(f"Invalid date: {date_str}")
 
