@@ -16,12 +16,11 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-vsfacmeeg6nfk!)%yp%q#)9^%2a&j@1y2-fna)r2)p2d!hc7xz'
+SECRET_KEY = os.getenv('DB_NAME', 'meetappdate_db')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -79,9 +78,13 @@ WSGI_APPLICATION = 'teamcalendar.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME', 'meetappdate_db'),
+        'USER': os.getenv('DB_USER', 'admin_user'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'your_password_here'),
+        'HOST': os.getenv('DB_HOST', 'meetappdatedatabase.postgres.database.azure.com'),
+        'PORT': '5432',
     }
 }
 
