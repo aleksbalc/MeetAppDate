@@ -9,21 +9,71 @@ from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
 from . import forms
 import json
-import hashlib
+import random
 from .forms import EventForm, GuestAvailabilityForm, PasswordForm
 from .models import Event, AvailableDate, GuestAvailability
 from datetime import timedelta, datetime, date
 from django.core.mail import send_mail
+from django.core.cache import cache
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 def add_event(request):
     if request.method == 'POST':
         form = EventForm(request.POST)
         if form.is_valid():
-            event_instance = form.save()  # Save the form and get the instance
-            return redirect('show_event', access_code=event_instance.access_code)  # Redirect to event/<access_code>/
+            event_instance = form.save()
+            return redirect('show_event', access_code=event_instance.access_code)
+        else:
+            print(form.errors) 
+
     else:
         form = EventForm()
     return render(request, 'add_event.html', {'form': form})
+
+def send_otp(request):
+    """Sends OTP to the provided email."""
+    if request.method == "POST":
+        data = json.loads(request.body)
+        email = data.get("email")
+
+        if not email:
+            return JsonResponse({"success": False, "message": "Email is required."})
+
+        otp = random.randint(100000, 999999)
+        cache.set(f'otp_{email}', otp, timeout=300)  # 5 minutes expiry
+
+        send_mail(
+            "Your OTP Code",
+            f"Your OTP is {otp}. It will expire in 5 minutes.",
+            "noreply@example.com",
+            [email],
+            fail_silently=False,
+        )
+
+        return JsonResponse({"success": True, "message": "OTP sent successfully."})
+    
+    return JsonResponse({"success": False, "message": "Invalid request."})
+
+def verify_otp(request):
+    """Verifies if the OTP is correct."""
+    if request.method == "POST":
+        data = json.loads(request.body)
+        email = data.get("email")
+        otp = data.get("otp")
+
+        if not email or not otp:
+            return JsonResponse({"success": False, "message": "Email and OTP are required."})
+
+        cached_otp = cache.get(f'otp_{email}')
+
+        if str(cached_otp) == otp:
+            cache.delete(f'otp_{email}')  # Remove OTP after successful verification
+            return JsonResponse({"success": True, "message": "OTP verified successfully."})
+        
+        return JsonResponse({"success": False, "message": "Invalid OTP."})
+    
+    return JsonResponse({"success": False, "message": "Invalid request."})
 
 def show_event(request, access_code):
     try:

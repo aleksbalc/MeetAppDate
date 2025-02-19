@@ -11,10 +11,19 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import json
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+CONFIG_FILE_PATH = os.path.join(os.path.dirname(__file__), "config.json")
+
+try:
+    with open(CONFIG_FILE_PATH, "r") as config_file:
+        config_data = json.load(config_file)
+except FileNotFoundError:
+    config_data = {}
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -143,3 +152,14 @@ DATE_INPUT_FORMATS = [
     '%b. %d, %Y',    # Month DD, YYYY format
 ]
 DATE_FORMAT = '%Y-%m-%d'  # Default display format
+
+
+EMAIL_HOST = config_data.get("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = config_data.get("EMAIL_PORT", 587)
+EMAIL_USE_TLS = config_data.get("EMAIL_USE_TLS", True)
+EMAIL_USE_SSL = config_data.get("EMAIL_USE_SSL", False)
+EMAIL_HOST_USER = config_data.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = config_data.get("EMAIL_HOST_PASSWORD", "")
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
