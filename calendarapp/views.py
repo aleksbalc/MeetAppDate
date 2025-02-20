@@ -191,10 +191,12 @@ def show_event(request, access_code):
                 great_dates = {}
 
                 for dates, guests in availability_data.items():
-                    if sorted(guests) == guest_names:  # Check if all guests are available
-                        perfect_dates.append(dates)
-                    else:
-                        great_dates[dates] = guests  # Store guests available on each date
+                    if event.start_date.strftime("%Y-%m-%d") <= dates <= event.end_date.strftime("%Y-%m-%d"):  
+                        if sorted(guests) == guest_names:  # Check if all guests are available
+                            perfect_dates.append(dates)
+                        else:
+                            great_dates[dates] = guests  # Store guests available on each date
+
 
                 # Sort great dates by most available guests
                 sorted_great_dates = sorted(great_dates.items(), key=lambda x: len(x[1]), reverse=True)
