@@ -1,1 +1,45 @@
-<h1>This is home page</h1>
+{% extends "layouts/base-fullscreen-new.html" %}
+
+{% block content %}
+<!-- Header -->
+<div class="header bg-transparent pb-6">
+    <div class="container-fluid">
+        <div class="header-body">
+            <div class="row align-items-center py-4">
+                <div class="col text-center">
+                    <h1 class="text-white">Welcome to Event Planner</h1>
+                    <p class="text-white lead mt-3">
+                        Easily create and manage events, collect availability from guests, and find the perfect date for
+                        everyone.
+                    </p>
+                    <a href="{% url 'add_event' %}" class="btn btn-success mt-4">Create New Event</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<br>
+<br>
+<br>
+<!-- Page content -->
+<div class="container-fluid mt--6">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-transparent text-center">
+                    <h2 class="mb-0">How It Works</h2>
+                </div>
+                <div class="card-body text-center">
+                    <p class="lead">
+                        🎉 Create an event by providing details like name, dates, and description.<br>
+                        📅 Share the event link with guests to collect their availability.<br>
+                        🏆 Find the best date that works for everyone and finalize your event!
+                    </p>
+                    <a href="{% url 'add_event' %}" class="btn btn-primary mt-3">Get Started</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

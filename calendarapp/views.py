@@ -304,7 +304,7 @@ def post_event(request):
 def index(request):
     context = {'segment': 'index'}
 
-    html_template = loader.get_template('home/index.html')
+    html_template = loader.get_template('home.html')
     return HttpResponse(html_template.render(context, request))
 
 
