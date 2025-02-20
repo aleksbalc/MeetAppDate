@@ -261,7 +261,15 @@ def add_availability(request, access_code):
                 "error": "Please fill in all fields."
             })
 
-        guest = GuestAvailability.objects.create(event=event, name=guest_name)
+        existing_guest = GuestAvailability.objects.filter(event=event, name=guest_name).first()
+
+        if existing_guest:
+            return render(request, "add_availability.html", {
+                "event": event,
+                "error": "This name has already been taken. Choose a different name."
+            })
+        else:
+            guest = GuestAvailability.objects.create(event=event, name=guest_name)
 
         selected_dates = selected_dates_str.split(",")
         for date_str in selected_dates:

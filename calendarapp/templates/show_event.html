@@ -121,9 +121,9 @@
                                     {% if guest.availabledate_set.all|dictsort:"date" %}
                                     {% for date in guest.availabledate_set.all|dictsort:"date" %}
                                     <p> </p>
-                                    {% if date.date|date:"F j, Y" <= event.end_date|date:"F j, Y" %} <p>
+                                    {% if date.date <= event.end_date %} <p>
                                         </p>
-                                        {% if date.date|date:"F j, Y" >= event.start_date|date:"F j, Y" %}
+                                        {% if date.date >= event.start_date %}
                                         <span class="badge bg-success">{{date.date|date:"F j, Y" }}</span>
                                         {% else %}
                                         <span class="badge bg-secondary">{{date.date|date:"F j, Y" }}</span>
