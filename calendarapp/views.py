@@ -17,6 +17,7 @@ from django.core.mail import send_mail
 from django.core.cache import cache
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 
 def add_event(request):
     if request.method == 'POST':
@@ -25,14 +26,14 @@ def add_event(request):
             event_instance = form.save()
             return redirect('show_event', access_code=event_instance.access_code)
         else:
-            print(form.errors) 
+            print(form.errors)
 
     else:
         form = EventForm()
     return render(request, 'add_event.html', {'form': form})
 
 def send_otp(request):
-    """Sends OTP to the provided email."""
+    """Sends OTP to the provided email with a cooldown to prevent abuse."""
     if request.method == "POST":
         data = json.loads(request.body)
         email = data.get("email")
@@ -40,13 +41,29 @@ def send_otp(request):
         if not email:
             return JsonResponse({"success": False, "message": "Email is required."})
 
+        # Check if OTP was sent recently (cooldown period: 2 minutes)
+        last_sent_time = cache.get(f'otp_time_{email}')
+        cooldown_seconds = 120  # 2 minutes
+
+        if last_sent_time:
+            time_since_last_otp = (datetime.now() - last_sent_time).total_seconds()
+            if time_since_last_otp < cooldown_seconds:
+                remaining_time = int(cooldown_seconds - time_since_last_otp)
+                return JsonResponse({
+                    "success": False, 
+                    "message": f"Please wait {remaining_time} seconds before requesting a new OTP."
+                })
+
+        # Generate a new OTP
         otp = random.randint(100000, 999999)
         cache.set(f'otp_{email}', otp, timeout=300)  # 5 minutes expiry
+        cache.set(f'otp_time_{email}', datetime.now(), timeout=cooldown_seconds)  # Store last OTP request time
 
+        # Send the OTP via email
         send_mail(
             "Your OTP Code",
             f"Your OTP is {otp}. It will expire in 5 minutes.",
-            "noreply@example.com",
+            settings.EMAIL_HOST_USER,
             [email],
             fail_silently=False,
         )
@@ -54,6 +71,7 @@ def send_otp(request):
         return JsonResponse({"success": True, "message": "OTP sent successfully."})
     
     return JsonResponse({"success": False, "message": "Invalid request."})
+
 
 def verify_otp(request):
     """Verifies if the OTP is correct."""
