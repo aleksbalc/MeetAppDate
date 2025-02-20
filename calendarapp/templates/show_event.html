@@ -118,9 +118,24 @@
                             <tr>
                                 <td>{{ guest.name }}</td>
                                 <td class="available-dates">
+                                    {% if guest.availabledate_set.all|dictsort:"date" %}
                                     {% for date in guest.availabledate_set.all|dictsort:"date" %}
-                                    <span class="badge bg-success">{{ date.date|date:"F j, Y" }}</span>
-                                    {% endfor %}
+                                    <p> </p>
+                                    {% if date.date|date:"F j, Y" <= event.end_date|date:"F j, Y" %} <p>
+                                        </p>
+                                        {% if date.date|date:"F j, Y" >= event.start_date|date:"F j, Y" %}
+                                        <span class="badge bg-success">{{date.date|date:"F j, Y" }}</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{date.date|date:"F j, Y" }}</span>
+                                        {% endif %}
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{date.date|date:"F j, Y" }}</span>
+                                        {% endif %}
+
+                                        {% endfor %}
+                                        {% else %}
+                                        <span class="text-muted">No available dates</span>
+                                        {% endif %}
                                 </td>
 
                             </tr>
