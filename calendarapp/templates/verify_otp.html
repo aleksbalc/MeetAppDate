@@ -1,0 +1,18 @@
+<!-- verify_otp.html -->
+{% extends "layouts/base-fullscreen-new.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Verify Your Email</h2>
+    <p>We have sent a 6-digit OTP to your email. Enter it below to continue.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+        <button type="submit" class="btn btn-primary">Verify OTP</button>
+    </form>
+</div>
+{% endblock %}

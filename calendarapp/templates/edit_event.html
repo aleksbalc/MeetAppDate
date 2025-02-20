@@ -1,0 +1,104 @@
+{% extends "layouts/base-fullscreen-new.html" %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="header bg-transparent pb-6">
+    <div class="container-fluid">
+        <div class="header-body">
+            <div class="row align-items-center py-4">
+                <div class="col">
+                    <h6 class="h1 text-white d-inline-block mb-0">Edit Event Details</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid mt--6">
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <br>
+                <br>
+
+                <form id="event-edit-form" method="post">
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label for="id_name">Event Name:</label>
+                        {{ form.name }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_description">Description:</label>
+                        {{ form.description }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_start_date">Start Date:</label>
+                        {{ form.start_date }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_end_date">End Date:</label>
+                        {{ form.end_date }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_email">Host Email:</label>
+                        {{ form.email }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_email">Password:</label>
+                        {{ form.password }}
+                    </div>
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% for field in form %}
+                    {% if field.errors %}
+                    <div class="alert alert-danger">
+                        {% for error in field.errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                    <button type="button" class="btn btn-secondary mt-3" onclick="history.back();">Cancel</button>
+
+                    <button type="submit" class="btn btn-success mt-3">Save Changes</button>
+                </form>
+                <br>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById("event-edit-form").addEventListener("submit", function (event) {
+        let form = this;
+        let formData = new FormData(form);
+
+        fetch(form.action, {
+            method: "POST",
+            body: formData
+        })
+            .then(response => response.redirected ? window.location.href = response.url : response.text())
+            .then(text => {
+                let parser = new DOMParser();
+                let doc = parser.parseFromString(text, "text/html");
+                document.body.innerHTML = doc.body.innerHTML;
+            })
+            .catch(error => console.error("Error:", error));
+    });
+</script>
+
+{% endblock %}

@@ -3,45 +3,68 @@
 {% load custom_filters %}
 {% block content %}
 
-<div class="container mt-5">
-    <h1>Add Your Availability for {{ event.name }}</h1>
-
-    {% if error %}
-    <div class="alert alert-danger">
-        {{ error }}
-    </div>
-    {% endif %}
-
-    <!-- Event Information -->
-    <div class="card shadow-lg">
-        <div class="card-body">
-            <p><strong>Start Date:</strong> {{ event.start_date|date:"Y-m-d" }}</p>
-            <p><strong>End Date:</strong> {{ event.end_date|date:"Y-m-d" }}</p>
+<!-- Header -->
+<div class="header bg-transparent pb-6">
+    <div class="container-fluid">
+        <div class="header-body">
+            <div class="row align-items-center py-4">
+                <div class="col">
+                    <h6 class="h1 text-white d-inline-block mb-0">Add Your Availability for {{ event.name }}</h6>
+                </div>
+            </div>
         </div>
     </div>
+</div>
 
-    <!-- Availability Form -->
-    <form method="POST" id="availability-form">
-        {% csrf_token %}
+<div class="container-fluid mt--6">
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header bg-transparent">
+                    <h2 class="mb-0">Event details</h2>
+                </div>
 
-        <!-- Guest Name Input -->
-        <div class="form-group mt-3">
-            <label for="guest_name">Your Name</label>
-            <input type="text" class="form-control" id="guest_name" name="guest_name" required>
+                <!-- Event Information -->
+                <div class="card shadow-lg">
+                    <div class="card-body">
+                        <p><strong>Start Date:</strong> {{ event.start_date|date:"Y-m-d" }}</p>
+                        <p><strong>End Date:</strong> {{ event.end_date|date:"Y-m-d" }}</p>
+                    </div>
+                </div>
+
+                <!-- Availability Form -->
+                <form method="POST" id="availability-form">
+                    {% csrf_token %}
+
+                    <!-- Guest Name Input -->
+                    <div class="mb-3">
+                        <label class="form-label" for="guest_name">Your Name</label>
+                        <input type="text" class="form-control" id="guest_name" name="guest_name" required>
+                    </div>
+
+                    <!-- Calendar for Availability Selection -->
+                    <div class="form-group mt-4">
+                        <label>Select Your Available Dates:</label>
+                        <input type="text" id="calendar" class="form-control" placeholder="Click to select dates">
+                    </div>
+
+                    <!-- Hidden Input to Store Selected Dates -->
+                    <input type="hidden" id="selected_dates" name="available_dates">
+
+                    {% if error %}
+                    <div class="alert alert-danger">
+                        {{ error }}
+                    </div>
+                    {% endif %}
+
+                    <!-- Submit Button -->
+                    <button type="button" class="btn btn-secondary mt-3" onclick="history.back();">Cancel</button>
+                    <button type="submit" class="btn btn-primary mt-3">Submit Availability</button>
+                </form>
+                <br>
+            </div>
         </div>
-
-        <!-- Calendar for Availability Selection -->
-        <div class="form-group mt-4">
-            <label>Select Your Available Dates:</label>
-            <input type="text" id="calendar" class="form-control" placeholder="Click to select dates">
-        </div>
-
-        <!-- Hidden Input to Store Selected Dates -->
-        <input type="hidden" id="selected_dates" name="available_dates">
-
-        <!-- Submit Button -->
-        <button type="submit" class="btn btn-primary mt-3">Submit Availability</button>
-    </form>
+    </div>
 </div>
 
 <!-- Include Flatpickr (Interactive Calendar) -->

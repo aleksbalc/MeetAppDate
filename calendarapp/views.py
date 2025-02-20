@@ -9,21 +9,151 @@ from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
 from . import forms
 import json
-import hashlib
+import random
 from .forms import EventForm, GuestAvailabilityForm, PasswordForm
 from .models import Event, AvailableDate, GuestAvailability
 from datetime import timedelta, datetime, date
 from django.core.mail import send_mail
+from django.core.cache import cache
+from django.http import JsonResponse
+from django.conf import settings
+
+def edit_event(request, access_code):
+    """Allows event editing. Checks if the user is an authenticated host, else requests OTP verification."""
+    event = get_object_or_404(Event, access_code=access_code)
+    host_session_key = f'host_authenticated_{access_code}'
+    otp_cache_key = f'otp_{event.email}'
+
+    if request.session.get(host_session_key):
+        if request.method == "POST":
+            form = EventForm(request.POST, instance=event)
+            if form.is_valid():
+                form.save()
+                return redirect('show_event', access_code=event.access_code)  # Redirect to event details
+            else:
+                print(form.errors)
+        else:
+            form = EventForm(instance=event)
+
+        return render(request, 'edit_event.html', {'form': form, 'event': event})  # Show errors if form is invalid
+
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            otp_entered = data.get("otp")
+
+            cached_otp = cache.get(otp_cache_key)
+            if str(cached_otp) == otp_entered:
+                cache.delete(otp_cache_key)
+                request.session[host_session_key] = True
+                request.session.set_expiry(900)
+                return JsonResponse({"success": True, "message": "OTP verified. You can now edit the event."})
+
+            return JsonResponse({"success": False, "message": "Invalid OTP. Please try again."})
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "message": "Invalid request format."})
+
+    if not cache.get(otp_cache_key):
+        otp = random.randint(100000, 999999)
+        cache.set(otp_cache_key, otp, timeout=300)
+
+        send_mail(
+            "Your Event Edit OTP",
+            f"Your OTP for editing event '{event.name}' is {otp}. It expires in 5 minutes.",
+            settings.EMAIL_HOST_USER,
+            [event.email],
+            fail_silently=False,
+        )
+
+    return render(request, 'verify_host.html', {'event': event})
+
 
 def add_event(request):
     if request.method == 'POST':
         form = EventForm(request.POST)
         if form.is_valid():
-            event_instance = form.save()  # Save the form and get the instance
-            return redirect('show_event', access_code=event_instance.access_code)  # Redirect to event/<access_code>/
+            event_instance = form.save()
+
+            # Store session key for host authentication 
+            host_session_key = f'host_authenticated_{event_instance.access_code}'
+            request.session[host_session_key] = True
+
+            # Store session key for event access
+            access_key = f'event_access_{event_instance.access_code}'
+            access_time_key = f'event_access_time_{event_instance.access_code}'
+
+            request.session[access_key] = True
+            request.session[access_time_key] = datetime.now().isoformat()
+            request.session.set_expiry(1800)  # 30 minutes
+
+            return redirect('show_event', access_code=event_instance.access_code)
+        else:
+            print(form.errors)
+
     else:
         form = EventForm()
     return render(request, 'add_event.html', {'form': form})
+
+def send_otp(request):
+    """Sends OTP to the provided email with a cooldown to prevent abuse."""
+    if request.method == "POST":
+        data = json.loads(request.body)
+        email = data.get("email")
+
+        if not email:
+            return JsonResponse({"success": False, "message": "Email is required."})
+
+        # Check if OTP was sent recently (cooldown period: 2 minutes)
+        last_sent_time = cache.get(f'otp_time_{email}')
+        cooldown_seconds = 120  # 2 minutes
+
+        if last_sent_time:
+            time_since_last_otp = (datetime.now() - last_sent_time).total_seconds()
+            if time_since_last_otp < cooldown_seconds:
+                remaining_time = int(cooldown_seconds - time_since_last_otp)
+                return JsonResponse({
+                    "success": False, 
+                    "message": f"Please wait {remaining_time} seconds before requesting a new OTP."
+                })
+
+        # Generate a new OTP
+        otp = random.randint(100000, 999999)
+        cache.set(f'otp_{email}', otp, timeout=300)  # 5 minutes expiry
+        cache.set(f'otp_time_{email}', datetime.now(), timeout=cooldown_seconds)  # Store last OTP request time
+
+        # Send the OTP via email
+        send_mail(
+            "Your OTP Code",
+            f"Your OTP is {otp}. It will expire in 5 minutes.",
+            settings.EMAIL_HOST_USER,
+            [email],
+            fail_silently=False,
+        )
+
+        return JsonResponse({"success": True, "message": "OTP sent successfully."})
+    
+    return JsonResponse({"success": False, "message": "Invalid request."})
+
+
+def verify_otp(request):
+    """Verifies if the OTP is correct."""
+    if request.method == "POST":
+        data = json.loads(request.body)
+        email = data.get("email")
+        otp = data.get("otp")
+
+        if not email or not otp:
+            return JsonResponse({"success": False, "message": "Email and OTP are required."})
+
+        cached_otp = cache.get(f'otp_{email}')
+
+        if str(cached_otp) == otp:
+            cache.delete(f'otp_{email}')  # Remove OTP after successful verification
+            return JsonResponse({"success": True, "message": "OTP verified successfully."})
+        
+        return JsonResponse({"success": False, "message": "Invalid OTP."})
+    
+    return JsonResponse({"success": False, "message": "Invalid request."})
 
 def show_event(request, access_code):
     try:
@@ -174,7 +304,7 @@ def post_event(request):
 def index(request):
     context = {'segment': 'index'}
 
-    html_template = loader.get_template('home/index.html')
+    html_template = loader.get_template('home.html')
     return HttpResponse(html_template.render(context, request))
 
 
