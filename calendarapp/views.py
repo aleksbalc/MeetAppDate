@@ -95,7 +95,7 @@ def add_event(request):
         form = EventForm()
     return render(request, 'add_event.html', {'form': form})
 
-@csrf_exempt
+
 def send_otp(request):
     """Sends OTP to the provided email with a cooldown to prevent abuse."""
     if request.method == "POST":
