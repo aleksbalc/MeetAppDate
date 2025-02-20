@@ -74,10 +74,17 @@ def add_event(request):
         if form.is_valid():
             event_instance = form.save()
 
-            # Store session key for host authentication (15 min)
+            # Store session key for host authentication 
             host_session_key = f'host_authenticated_{event_instance.access_code}'
             request.session[host_session_key] = True
-            request.session.set_expiry(900)  # 15 minutes
+
+            # Store session key for event access
+            access_key = f'event_access_{event_instance.access_code}'
+            access_time_key = f'event_access_time_{event_instance.access_code}'
+
+            request.session[access_key] = True
+            request.session[access_time_key] = datetime.now().isoformat()
+            request.session.set_expiry(1800)  # 30 minutes
 
             return redirect('show_event', access_code=event_instance.access_code)
         else:
