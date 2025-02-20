@@ -23,6 +23,9 @@
                         <button class="btn btn-outline-primary" onclick="copyEventUrl(this)"
                             data-url="{{ request.build_absolute_uri }}">Copy URL</button>
                     </p>
+                    <a href="{% url 'edit_event' event.access_code %}" class="btn btn-primary">Edit details (host
+                        only)</a>
+
                 </div>
             </div>
         </div>

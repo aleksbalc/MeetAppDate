@@ -13,4 +13,5 @@ urlpatterns = [
     path('send-otp/', views.send_otp, name='send_otp'),
     path('verify-otp/', views.verify_otp, name='verify_otp'),
     path('event/<str:access_code>/', views.show_event, name='show_event'),
+    path('event/<str:access_code>/edit-details/', views.edit_event, name='edit_event'),
     path('event/<str:access_code>/add-availability/', views.add_availability, name='add_availability'),]

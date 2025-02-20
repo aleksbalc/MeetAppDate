@@ -16,14 +16,69 @@ from datetime import timedelta, datetime, date
 from django.core.mail import send_mail
 from django.core.cache import cache
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
+
+def edit_event(request, access_code):
+    """Allows event editing. Checks if the user is an authenticated host, else requests OTP verification."""
+    event = get_object_or_404(Event, access_code=access_code)
+    host_session_key = f'host_authenticated_{access_code}'
+    otp_cache_key = f'otp_{event.email}'
+
+    if request.session.get(host_session_key):
+        if request.method == "POST":
+            form = EventForm(request.POST, instance=event)
+            if form.is_valid():
+                form.save()
+                return redirect('show_event', access_code=event.access_code)  # Redirect to event details
+            else:
+                print(form.errors)
+        else:
+            form = EventForm(instance=event)
+
+        return render(request, 'edit_event.html', {'form': form, 'event': event})  # Show errors if form is invalid
+
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            otp_entered = data.get("otp")
+
+            cached_otp = cache.get(otp_cache_key)
+            if str(cached_otp) == otp_entered:
+                cache.delete(otp_cache_key)
+                request.session[host_session_key] = True
+                request.session.set_expiry(900)
+                return JsonResponse({"success": True, "message": "OTP verified. You can now edit the event."})
+
+            return JsonResponse({"success": False, "message": "Invalid OTP. Please try again."})
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "message": "Invalid request format."})
+
+    if not cache.get(otp_cache_key):
+        otp = random.randint(100000, 999999)
+        cache.set(otp_cache_key, otp, timeout=300)
+
+        send_mail(
+            "Your Event Edit OTP",
+            f"Your OTP for editing event '{event.name}' is {otp}. It expires in 5 minutes.",
+            settings.EMAIL_HOST_USER,
+            [event.email],
+            fail_silently=False,
+        )
+
+    return render(request, 'verify_host.html', {'event': event})
+
 
 def add_event(request):
     if request.method == 'POST':
         form = EventForm(request.POST)
         if form.is_valid():
             event_instance = form.save()
+
+            # Store session key for host authentication (15 min)
+            host_session_key = f'host_authenticated_{event_instance.access_code}'
+            request.session[host_session_key] = True
+            request.session.set_expiry(900)  # 15 minutes
+
             return redirect('show_event', access_code=event_instance.access_code)
         else:
             print(form.errors)
