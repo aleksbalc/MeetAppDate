@@ -2,6 +2,12 @@
 {% extends "layouts/base-fullscreen-new.html" %}
 
 {% block content %}
+
+<script>
+    var sendOtpUrl = "{% url 'send_otp' %}";
+    var verifyOtpUrl = "{% url 'verify_otp' %}";
+</script>
+
 <!-- Header -->
 <div class="header bg-transparent pb-6">
     <div class="container-fluid">
@@ -131,7 +137,7 @@
             return;
         }
 
-        fetch("{% url 'send_otp' %}", {
+        fetch(sendOtpUrl, {
             method: "POST",
             body: JSON.stringify({ email: email }),
             headers: {
@@ -146,14 +152,15 @@
                 } else {
                     alert("Error: " + data.message);
                 }
-            });
+            })
+            .catch(error => console.error("Fetch error:", error));
     });
 
     document.getElementById("verifyOtpBtn").addEventListener("click", function () {
         let email = document.querySelector('input[name="email"]').value;
         let otp = document.getElementById("otpInput").value;
 
-        fetch("{% url 'verify_otp' %}", {
+        fetch(verifyOtpUrl, {  // ✅ Use JavaScript variable
             method: "POST",
             body: JSON.stringify({ email: email, otp: otp }),
             headers: {
@@ -169,8 +176,10 @@
                 } else {
                     document.getElementById("otpError").style.display = "block";
                 }
-            });
+            })
+            .catch(error => console.error("Fetch error:", error));
     });
+
 </script>
 
 {% endblock content %}
