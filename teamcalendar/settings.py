@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('APP_SECRET_KEY', 'meetappdatedatabase')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["meetappdate-dmc3fkgthxdsapd7.polandcentral-01.azurewebsites.net"]
 
