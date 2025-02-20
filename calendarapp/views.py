@@ -17,6 +17,7 @@ from django.core.mail import send_mail
 from django.core.cache import cache
 from django.http import JsonResponse
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 
 def edit_event(request, access_code):
     """Allows event editing. Checks if the user is an authenticated host, else requests OTP verification."""
