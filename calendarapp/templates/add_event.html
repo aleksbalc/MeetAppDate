@@ -84,6 +84,8 @@
                     <div class="row">
                         <div class="col-md-12 mb-3"> {{ form.email }}
                             <button type="button" class="btn btn-secondary" id="verifyEmailBtn">Verify Email</button>
+                            <p id="otpSentMessage" class="text-success mt-2" style="display: none;">OTP has been sent to
+                                your email!</p>
                         </div>
                     </div>
 
@@ -128,11 +130,22 @@
 </script>
 
 <script>
+    function isValidEmail(email) {
+        let emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailPattern.test(email);
+    }
+
     document.getElementById("verifyEmailBtn").addEventListener("click", function () {
         let email = document.querySelector('input[name="email"]').value;
+        let otpSentMessage = document.getElementById("otpSentMessage");
 
         if (!email) {
             alert("Please enter an email first.");
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            alert("Please enter a valid email address.");
             return;
         }
 
@@ -146,12 +159,17 @@
         })
             .then(response => response.json())
             .then(data => {
-                if (!data.success) {
+                if (data.success) {
+                    otpSentMessage.style.display = "block";  // Show success message
+                    otpSentMessage.textContent = "OTP has been sent to your email!";
+                } else {
                     alert("Error: " + data.message);
                 }
             })
             .catch(error => console.error("Fetch error:", error));
     });
+
+
 
     document.getElementById("verifyOtpBtn").addEventListener("click", function () {
         let email = document.querySelector('input[name="email"]').value;
